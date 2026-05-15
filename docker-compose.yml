@@ -1,0 +1,32 @@
+services:
+  postgres:
+    container_name: postgres-db
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "${PG_LOCAL_PORT}:${PG_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    container_name: nest-docker
+    build:
+      context: ./
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PG_PORT=${PG_PORT}
+      - PG_LOCAL_PORT=${PG_LOCAL_PORT}
